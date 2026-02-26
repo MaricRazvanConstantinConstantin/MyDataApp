@@ -1,30 +1,14 @@
-import {BrowserRouter, Routes, Route, Link} from 'react-router-dom';
-import Login from './pages/Login';
-
-import './App.css';
-import Dashboard from './pages/Dashboard';
+import {BrowserRouter, Routes, Route} from 'react-router-dom';
+import Shell from './components/Shell';
 import {useEffect} from 'react';
 import {useAppDispatch} from './store/hooks';
 import {restoreSession} from './store/authSlice';
-
-function Landing() {
-  return (
-    <div className='min-h-screen flex flex-col items-center justify-center p-4'>
-      <h1 className='text-3xl font-bold mb-4'>Recipe Manager</h1>
-      <p className='mb-6 text-center max-w-xl'>
-        Manage recipes — visitors can view, admins can manage.
-      </p>
-      <div className='space-x-3'>
-        <Link to='/login' className='px-4 py-2 bg-blue-600 text-white rounded'>
-          Admin Login
-        </Link>
-        <Link to='/dashboard' className='px-4 py-2 border rounded'>
-          Continue as visitor
-        </Link>
-      </div>
-    </div>
-  );
-}
+import RecipesPage from './pages/Recipes';
+import RecipeEditorPage from './pages/RecipeEditor';
+import RecipeDetailPage from './pages/RecipeDetail';
+import MessagesPage from './pages/Messages';
+import ProtectedRoute from './components/ProtectedRoute';
+import Landing from './pages/Landing';
 
 export default function App() {
   const dispatch = useAppDispatch();
@@ -33,11 +17,37 @@ export default function App() {
   }, [dispatch]);
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path='/' element={<Landing />} />
-        <Route path='/login' element={<Login />} />
-        <Route path='/dashboard' element={<Dashboard />} />
-      </Routes>
+      <Shell>
+        <Routes>
+          <Route path='/' element={<Landing />} />
+          <Route path='/recipes' element={<RecipesPage />} />
+          <Route path='/recipes/:id' element={<RecipeDetailPage />} />
+          <Route
+            path='/messages'
+            element={
+              <ProtectedRoute requireAdmin>
+                <MessagesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/recipes/new'
+            element={
+              <ProtectedRoute requireAdmin>
+                <RecipeEditorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/recipes/:id/edit'
+            element={
+              <ProtectedRoute requireAdmin>
+                <RecipeEditorPage />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Shell>
     </BrowserRouter>
   );
 }

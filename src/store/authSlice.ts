@@ -11,6 +11,7 @@ interface AuthState {
   isAdmin: boolean;
   status: 'idle' | 'loading' | 'error';
   error?: string | null;
+  initialized?: boolean;
 }
 
 const initialState: AuthState = {
@@ -18,40 +19,48 @@ const initialState: AuthState = {
   isAdmin: false,
   status: 'idle',
   error: null,
+  initialized: false,
 };
 
-export const signIn = createAsyncThunk(
-  'auth/signIn',
-  async (
-    {email, password}: {email: string; password: string},
-    {rejectWithValue},
-  ) => {
-    const res = await supabase.auth.signInWithPassword({email, password});
-    if (res.error) return rejectWithValue(res.error.message);
+export const signIn = createAsyncThunk<
+  {user: User | null; isAdmin: boolean},
+  {email: string; password: string},
+  {rejectValue: string}
+>('auth/signIn', async ({email, password}, {rejectWithValue}) => {
+  const res = await supabase.auth.signInWithPassword({email, password});
+  if (res.error) return rejectWithValue(res.error.message);
 
-    const {data: userData} = await supabase.auth.getUser();
-    const user = userData?.user ?? null;
-    if (!user) return rejectWithValue('No user returned from Supabase');
+  const {data: userData} = await supabase.auth.getUser();
+  const user = userData?.user ?? null;
+  if (!user) return rejectWithValue('No user returned from Supabase');
 
-    const {data: profile, error: profileErr} = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+  const {data: profile, error: profileErr} = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
 
-    if (profileErr) {
-      return {user, isAdmin: false};
-    }
+  if (profileErr) {
+    return {user, isAdmin: false};
+  }
 
-    return {user, isAdmin: profile?.role === 'admin'};
+  return {user, isAdmin: profile?.role === 'admin'};
+});
+
+export const signOut = createAsyncThunk<void, void, {rejectValue: string}>(
+  'auth/signOut',
+  async (_, {rejectWithValue}) => {
+    const res = await supabase.auth.signOut();
+    if (res.error)
+      return rejectWithValue(res.error.message ?? 'Sign out failed');
   },
 );
 
-export const signOut = createAsyncThunk('auth/signOut', async () => {
-  await supabase.auth.signOut();
-});
-
-export const restoreSession = createAsyncThunk('auth/restore', async () => {
+export const restoreSession = createAsyncThunk<
+  {user: User | null; isAdmin: boolean},
+  void,
+  {rejectValue: string}
+>('auth/restore', async () => {
   const {data} = await supabase.auth.getSession();
   const session = data?.session ?? null;
   if (!session) return {user: null as User | null, isAdmin: false};
@@ -103,9 +112,19 @@ const slice = createSlice({
         state.isAdmin = false;
         state.status = 'idle';
       })
+      .addCase(restoreSession.pending, (state) => {
+        state.status = 'loading';
+        state.initialized = false;
+      })
       .addCase(restoreSession.fulfilled, (state, action) => {
         state.user = action.payload.user;
         state.isAdmin = action.payload.isAdmin;
+        state.status = 'idle';
+        state.initialized = true;
+      })
+      .addCase(restoreSession.rejected, (state) => {
+        state.status = 'idle';
+        state.initialized = true;
       });
   },
 });
