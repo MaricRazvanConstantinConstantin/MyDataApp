@@ -1,6 +1,7 @@
 import {
   createSlice,
   createAsyncThunk,
+  createEntityAdapter,
   type PayloadAction,
 } from '@reduxjs/toolkit';
 import supabase from '../lib/supabase';
@@ -15,14 +16,17 @@ export type Message = {
   created_at: string;
 };
 
-interface MessagesState {
-  list: Message[];
+const messagesAdapter = createEntityAdapter<Message>();
+
+interface MessagesState extends ReturnType<
+  typeof messagesAdapter.getInitialState
+> {
   loading: boolean;
   error?: string | null;
 }
 
 const initialState: MessagesState = {
-  list: [],
+  ...messagesAdapter.getInitialState(),
   loading: false,
   error: null,
 };
@@ -80,7 +84,7 @@ const slice = createSlice({
         fetchMessages.fulfilled,
         (state, action: PayloadAction<Message[]>) => {
           state.loading = false;
-          state.list = action.payload;
+          messagesAdapter.setAll(state, action.payload);
         },
       )
       .addCase(fetchMessages.rejected, (state, action) => {
@@ -94,7 +98,12 @@ const slice = createSlice({
       .addCase(
         addMessage.fulfilled,
         (state, action: PayloadAction<Message>) => {
-          state.list.unshift(action.payload);
+          messagesAdapter.addOne(state, action.payload);
+          // keep newest first ordering
+          state.ids = [
+            action.payload.id,
+            ...state.ids.filter((i) => i !== action.payload.id),
+          ];
         },
       )
       .addCase(addMessage.rejected, (state, action) => {
@@ -105,7 +114,7 @@ const slice = createSlice({
       .addCase(
         deleteMessage.fulfilled,
         (state, action: PayloadAction<string>) => {
-          state.list = state.list.filter((m) => m.id !== action.payload);
+          messagesAdapter.removeOne(state, action.payload);
         },
       )
       .addCase(deleteMessage.rejected, (state, action) => {
@@ -115,6 +124,16 @@ const slice = createSlice({
   },
 });
 
-export const selectMessages = (s: RootState) => s.messages;
+// selectors
+const messagesSelectors = messagesAdapter.getSelectors<{
+  messages: MessagesState;
+}>((state) => state.messages);
+
+export const selectAllMessages = (state: RootState) =>
+  messagesSelectors.selectAll(state);
+export const selectMessageById = (state: RootState, id?: string | null) => {
+  if (!id) return null;
+  return messagesSelectors.selectById(state, id) ?? null;
+};
 
 export default slice.reducer;

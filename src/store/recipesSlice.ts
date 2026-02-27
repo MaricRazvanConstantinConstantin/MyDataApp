@@ -1,6 +1,7 @@
 import {
   createSlice,
   createAsyncThunk,
+  createEntityAdapter,
   type PayloadAction,
 } from '@reduxjs/toolkit';
 import supabase from '../lib/supabase';
@@ -8,11 +9,7 @@ import type {Recipe} from '../utils/types/recipe';
 import {isRecipe} from '../utils/guards/recipe';
 import {getJson, setJson} from '../utils/storage';
 
-interface RecipesState {
-  list: Recipe[];
-  loading: boolean;
-  error?: string | null;
-}
+const recipesAdapter = createEntityAdapter<Recipe>();
 
 function loadCachedRecipes(): Recipe[] {
   const parsed = getJson<unknown[]>('recipes-cache', []);
@@ -23,11 +20,20 @@ function loadCachedRecipes(): Recipe[] {
   return validated;
 }
 
-const initialState: RecipesState = {
-  list: loadCachedRecipes(),
+const initialState = recipesAdapter.getInitialState<{
+  loading: boolean;
+  error: string | null;
+}>({
   loading: false,
   error: null,
-};
+});
+
+const cached = loadCachedRecipes();
+if (cached.length > 0) {
+  recipesAdapter.setAll(initialState, cached);
+}
+
+type RecipesState = typeof initialState;
 
 export const fetchRecipes = createAsyncThunk<
   Recipe[],
@@ -48,6 +54,22 @@ export const fetchRecipes = createAsyncThunk<
   return validated;
 });
 
+export const fetchRecipeById = createAsyncThunk<
+  Recipe,
+  string,
+  {rejectValue: string}
+>('recipes/fetchById', async (id, {rejectWithValue}) => {
+  const {data, error} = await supabase
+    .from('recipes')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (error) return rejectWithValue(error.message ?? 'Failed to fetch recipe');
+  const item = data;
+  if (!isRecipe(item)) return rejectWithValue('Invalid recipe from server');
+  return item;
+});
+
 export const addRecipe = createAsyncThunk<
   Recipe,
   Partial<Recipe>,
@@ -59,7 +81,7 @@ export const addRecipe = createAsyncThunk<
     .select()
     .single();
   if (error) return rejectWithValue(error.message ?? 'Failed to add recipe');
-  const item = data as unknown;
+  const item = data;
   if (!isRecipe(item))
     return rejectWithValue('Invalid recipe returned from server');
   return item;
@@ -77,7 +99,7 @@ export const updateRecipe = createAsyncThunk<
     .select()
     .single();
   if (error) return rejectWithValue(error.message ?? 'Failed to update recipe');
-  const item = data as unknown;
+  const item = data;
   if (!isRecipe(item))
     return rejectWithValue('Invalid recipe returned from server');
   return item;
@@ -107,8 +129,8 @@ const slice = createSlice({
         fetchRecipes.fulfilled,
         (state, action: PayloadAction<Recipe[]>) => {
           state.loading = false;
-          state.list = action.payload;
-          setJson('recipes-cache', state.list);
+          recipesAdapter.setAll(state, action.payload);
+          setJson('recipes-cache', action.payload);
         },
       )
       .addCase(fetchRecipes.rejected, (state, action) => {
@@ -119,9 +141,44 @@ const slice = createSlice({
           'Failed to load';
       })
 
+      .addCase(fetchRecipeById.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchRecipeById.fulfilled,
+        (state, action: PayloadAction<Recipe>) => {
+          state.loading = false;
+          recipesAdapter.upsertOne(state, action.payload);
+          // update cache
+          const cached = state.ids.reduce<Recipe[]>((acc, id) => {
+            const ent = state.entities[id];
+            if (ent) acc.push(ent);
+            return acc;
+          }, []);
+          setJson('recipes-cache', cached);
+        },
+      )
+      .addCase(fetchRecipeById.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          (action.payload as string) ??
+          action.error.message ??
+          'Failed to fetch recipe';
+      })
+
       .addCase(addRecipe.fulfilled, (state, action: PayloadAction<Recipe>) => {
-        state.list.unshift(action.payload);
-        setJson('recipes-cache', state.list);
+        recipesAdapter.addOne(state, action.payload);
+        state.ids = [
+          action.payload.id,
+          ...state.ids.filter((i) => i !== action.payload.id),
+        ];
+        const cached = state.ids.reduce<Recipe[]>((acc, id) => {
+          const ent = state.entities[id];
+          if (ent) acc.push(ent);
+          return acc;
+        }, []);
+        setJson('recipes-cache', cached);
       })
       .addCase(addRecipe.rejected, (state, action) => {
         state.error =
@@ -131,9 +188,13 @@ const slice = createSlice({
       .addCase(
         updateRecipe.fulfilled,
         (state, action: PayloadAction<Recipe>) => {
-          const idx = state.list.findIndex((r) => r.id === action.payload.id);
-          if (idx >= 0) state.list[idx] = action.payload;
-          setJson('recipes-cache', state.list);
+          recipesAdapter.upsertOne(state, action.payload);
+          const cached = state.ids.reduce<Recipe[]>((acc, id) => {
+            const ent = state.entities[id];
+            if (ent) acc.push(ent);
+            return acc;
+          }, []);
+          setJson('recipes-cache', cached);
         },
       )
       .addCase(updateRecipe.rejected, (state, action) => {
@@ -144,8 +205,13 @@ const slice = createSlice({
       .addCase(
         deleteRecipe.fulfilled,
         (state, action: PayloadAction<string>) => {
-          state.list = state.list.filter((r) => r.id !== action.payload);
-          setJson('recipes-cache', state.list);
+          recipesAdapter.removeOne(state, action.payload);
+          const cached = state.ids.reduce<Recipe[]>((acc, id) => {
+            const ent = state.entities[id];
+            if (ent) acc.push(ent);
+            return acc;
+          }, []);
+          setJson('recipes-cache', cached);
         },
       )
       .addCase(deleteRecipe.rejected, (state, action) => {
@@ -154,5 +220,19 @@ const slice = createSlice({
       });
   },
 });
+
+const recipesSelectors = recipesAdapter.getSelectors<{
+  recipes: RecipesState;
+}>((state) => state.recipes);
+
+export const selectAllRecipes = (state: {recipes: RecipesState}) =>
+  recipesSelectors.selectAll(state);
+export const selectRecipeById = (
+  state: {recipes: RecipesState},
+  id: string | undefined | null,
+) => {
+  if (!id) return null as Recipe | null;
+  return recipesSelectors.selectById(state, id) ?? null;
+};
 
 export default slice.reducer;

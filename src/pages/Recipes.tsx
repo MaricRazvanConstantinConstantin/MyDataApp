@@ -2,7 +2,11 @@ import {useEffect, useMemo, useState, useRef, useCallback} from 'react';
 import type {Recipe} from '../utils/types/recipe';
 import {useNavigate} from 'react-router-dom';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
-import {fetchRecipes, deleteRecipe} from '../store/recipesSlice';
+import {
+  fetchRecipes,
+  deleteRecipe,
+  selectAllRecipes,
+} from '../store/recipesSlice';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import RecipeCard from '../components/RecipeCard';
@@ -10,7 +14,8 @@ import {getString, setString, remove} from '../utils/storage';
 
 export default function RecipesPage() {
   const dispatch = useAppDispatch();
-  const {list, loading} = useAppSelector((s) => s.recipes);
+  const list = useAppSelector(selectAllRecipes);
+  const loading = useAppSelector((s) => s.recipes.loading);
   const {isAdmin} = useAppSelector((s) => s.auth);
   const [query, setQuery] = useState(() => getString('recipes-query', ''));
   const [maxCook, setMaxCook] = useState(() => {

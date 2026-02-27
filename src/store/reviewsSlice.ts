@@ -1,18 +1,24 @@
 import {
   createSlice,
   createAsyncThunk,
+  createEntityAdapter,
   type PayloadAction,
 } from '@reduxjs/toolkit';
 import supabase from '../lib/supabase';
 import type {Review} from '../utils/types/review';
 
-export interface ReviewsState {
-  byRecipe: Record<string, Review[]>;
+const reviewsAdapter = createEntityAdapter<Review>();
+
+export interface ReviewsState extends ReturnType<
+  typeof reviewsAdapter.getInitialState
+> {
+  byRecipe: Record<string, string[]>;
   loading: boolean;
   error?: string | null;
 }
 
 const initialState: ReviewsState = {
+  ...reviewsAdapter.getInitialState(),
   byRecipe: {},
   loading: false,
   error: null,
@@ -65,7 +71,10 @@ const slice = createSlice({
       .addCase(fetchReviews.fulfilled, (state, action) => {
         state.loading = false;
         const recipeId = action.meta.arg;
-        state.byRecipe[recipeId] = action.payload;
+        // upsert fetched reviews into entity map
+        reviewsAdapter.upsertMany(state, action.payload);
+        // record ordering for this recipe
+        state.byRecipe[recipeId] = action.payload.map((r) => r.id);
       })
       .addCase(fetchReviews.rejected, (state, action) => {
         state.loading = false;
@@ -77,8 +86,13 @@ const slice = createSlice({
 
       .addCase(addReview.fulfilled, (state, action: PayloadAction<Review>) => {
         const r = action.payload;
+        reviewsAdapter.addOne(state, r);
         state.byRecipe[r.recipe_id] = state.byRecipe[r.recipe_id] || [];
-        state.byRecipe[r.recipe_id].unshift(r);
+        // ensure newest first
+        state.byRecipe[r.recipe_id] = [
+          r.id,
+          ...state.byRecipe[r.recipe_id].filter((i) => i !== r.id),
+        ];
       })
       .addCase(addReview.rejected, (state, action) => {
         state.error =
@@ -88,5 +102,31 @@ const slice = createSlice({
       });
   },
 });
+
+// selectors
+const reviewsSelectors = reviewsAdapter.getSelectors<{
+  reviews: ReviewsState;
+}>((state) => state.reviews);
+
+export const selectAllReviews = (state: {reviews: ReviewsState}) =>
+  reviewsSelectors.selectAll(state);
+export const selectReviewById = (
+  state: {reviews: ReviewsState},
+  id?: string | null,
+) => {
+  if (!id) return null as Review | null;
+  return reviewsSelectors.selectById(state, id) ?? null;
+};
+
+export const selectReviewsByRecipe = (
+  state: {reviews: ReviewsState},
+  recipeId?: string | null,
+) => {
+  if (!recipeId) return [] as Review[];
+  const ids = state.reviews.byRecipe[recipeId] ?? [];
+  return ids
+    .map((id) => reviewsSelectors.selectById(state, id))
+    .filter(Boolean) as Review[];
+};
 
 export default slice.reducer;

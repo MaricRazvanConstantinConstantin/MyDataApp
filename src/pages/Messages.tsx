@@ -4,7 +4,7 @@ import {useNavigate} from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import {useToast} from '../context/hooks';
-import {fetchMessages} from '../store/messagesSlice';
+import {fetchMessages, selectAllMessages} from '../store/messagesSlice';
 
 export default function MessagesPage() {
   const {isAdmin, initialized} = useAppSelector((s) => s.auth);
@@ -12,7 +12,8 @@ export default function MessagesPage() {
   const {showToast} = useToast();
   const dispatch = useAppDispatch();
 
-  const {list: messages, loading} = useAppSelector((s) => s.messages);
+  const messages = useAppSelector((s) => selectAllMessages(s));
+  const loading = useAppSelector((s) => s.messages.loading);
 
   const [page, setPage] = useState<number>(1);
   const [pageSize] = useState<number>(10);

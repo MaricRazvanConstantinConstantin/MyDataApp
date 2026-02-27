@@ -1,6 +1,10 @@
 import React, {useEffect, useMemo, useState} from 'react';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
-import {fetchReviews, addReview} from '../store/reviewsSlice';
+import {
+  fetchReviews,
+  addReview,
+  selectReviewsByRecipe,
+} from '../store/reviewsSlice';
 import type {Review} from '../utils/types/review';
 import Button from './ui/Button';
 import Card from './ui/Card';
@@ -39,12 +43,10 @@ function Stars({value, size = 14}: {value: number; size?: number}) {
 
 export default function ReviewsList({recipeId}: {recipeId: string}) {
   const dispatch = useAppDispatch();
-  const state = useAppSelector((s) => s.reviews);
-  const reviews: Review[] = useMemo(
-    () => state.byRecipe?.[recipeId] ?? [],
-    [state.byRecipe, recipeId],
+  const reviews: Review[] = useAppSelector((s) =>
+    selectReviewsByRecipe(s, recipeId),
   );
-  const loading = !!state.loading;
+  const loading = useAppSelector((s) => s.reviews.loading);
 
   const [name, setName] = useState('');
   const [rating, setRating] = useState(5);

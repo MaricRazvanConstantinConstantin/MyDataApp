@@ -4,7 +4,7 @@ import Button from './ui/Button';
 import placeholderForTitle from '../utils/placeholder';
 import type {Recipe} from '../utils/types/recipe';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
-import {fetchReviews} from '../store/reviewsSlice';
+import {fetchReviews, selectReviewsByRecipe} from '../store/reviewsSlice';
 
 type Props = {
   recipe: Recipe;
@@ -16,19 +16,15 @@ type Props = {
 
 function RecipeCard({recipe, isAdmin, onEdit, onDelete, onOpen}: Props) {
   const dispatch = useAppDispatch();
-  const reviewsMap = useAppSelector((s) => s.reviews.byRecipe);
+  const reviewsByRecipe = useAppSelector((s) => s.reviews.byRecipe);
+  const reviews = useAppSelector((s) => selectReviewsByRecipe(s, recipe.id));
 
   useEffect(() => {
     if (!recipe?.id) return;
-    if (!(recipe.id in (reviewsMap || {}))) {
+    if (!(recipe.id in (reviewsByRecipe || {}))) {
       void dispatch(fetchReviews(recipe.id));
     }
-  }, [dispatch, recipe?.id, reviewsMap]);
-
-  const reviews = useMemo(
-    () => reviewsMap?.[recipe.id] ?? [],
-    [reviewsMap, recipe.id],
-  );
+  }, [dispatch, recipe?.id, reviewsByRecipe]);
 
   const average = useMemo(() => {
     if (!reviews || reviews.length === 0) return null;

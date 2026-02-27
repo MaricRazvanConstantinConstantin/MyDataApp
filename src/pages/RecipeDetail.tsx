@@ -1,9 +1,12 @@
 import {useEffect, useState} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
+import {selectRecipeById} from '../store/recipesSlice';
+import {fetchRecipeById} from '../store/recipesSlice';
 
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import Spinner from '../components/ui/Spinner';
 import placeholderForTitle from '../utils/placeholder';
 import type {Recipe} from '../utils/types/recipe';
 import {deleteRecipe} from '../store/recipesSlice';
@@ -23,11 +26,13 @@ export default function RecipeDetail() {
   const {id} = useParams();
   const navigate = useNavigate();
   const recipe = useAppSelector((s) =>
-    id ? (s.recipes.list.find((r) => r.id === id) ?? null) : null,
+    selectRecipeById(s, id),
   ) as Recipe | null;
   const {isAdmin} = useAppSelector((s) => s.auth);
   const dispatch = useAppDispatch();
   const {showToast} = useToast();
+
+  const loading = useAppSelector((s) => s.recipes.loading);
 
   const [storedChecks, setStoredChecks] = useState<ChecksState>(() =>
     getJson<ChecksState>(`recipe-checks-${id ?? 'unknown'}`, {
@@ -63,6 +68,13 @@ export default function RecipeDetail() {
   }, [storedChecks, id]);
 
   useEffect(() => {
+    if (!id) return;
+    if (!recipe && !loading) {
+      void dispatch(fetchRecipeById(id));
+    }
+  }, [dispatch, id, recipe, loading]);
+
+  useEffect(() => {
     function onChecksUpdated(e: Event) {
       const rid = (e as CustomEvent)?.detail?.recipeId ?? id;
       if (!rid || String(rid) !== String(id)) return;
@@ -85,6 +97,19 @@ export default function RecipeDetail() {
   }, [id]);
 
   if (!recipe) {
+    if (loading) {
+      return (
+        <div className='w-full flex items-center justify-center min-h-[60vh] py-8'>
+          <Card className='card'>
+            <div className='p-6 flex items-center gap-4'>
+              <Spinner size={36} />
+              <div className='text-lg font-semibold'>Loading recipe…</div>
+            </div>
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className='w-full flex items-center justify-center min-h-[60vh] py-8'>
         <Card className='card'>

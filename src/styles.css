@@ -363,6 +363,24 @@ button:focus-visible {
   display: inline-block;
 }
 
+/* spinner */
+.spinner {
+  display: inline-block;
+  color: var(--primary);
+  animation: spin 1s linear infinite;
+}
+.spinner path {
+  stroke: currentColor;
+}
+.spinner circle {
+  stroke: currentColor;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .nav-button {
   position: relative;
 }
