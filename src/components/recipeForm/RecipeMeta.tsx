@@ -2,11 +2,13 @@ import React from 'react';
 import Input from '../ui/Input';
 import Textarea from '../ui/Textarea';
 import TagInput from './TagInput';
+import placeholderForTitle from '../../utils/placeholder';
 
 type MetaValues = {
   title: string;
   category: string;
   description: string;
+  image_url: string;
   prep_time: string;
   cook_time: string;
   servings: string;
@@ -43,6 +45,10 @@ export default function RecipeMeta({
   getFieldError,
   showErrors,
 }: Props) {
+  const previewSrc =
+    values.image_url && values.image_url.trim()
+      ? values.image_url.trim()
+      : placeholderForTitle(values.title);
   return (
     <>
       <div>
@@ -100,6 +106,43 @@ export default function RecipeMeta({
             {getFieldError('description')}
           </div>
         )}
+      </div>
+
+      <div>
+        <label htmlFor='image_url' className='block text-sm font-medium mb-1'>
+          Image URL (optional)
+        </label>
+        <Input
+          id='image_url'
+          name='image_url'
+          className='w-full'
+          placeholder='https://example.com/photo.jpg'
+          value={values.image_url}
+          onChange={handleChange}
+        />
+        {showErrors && getFieldError('image_url') && (
+          <div className='text-red-600 text-sm mt-1'>
+            {getFieldError('image_url')}
+          </div>
+        )}
+      </div>
+      <div className='mt-2'>
+        <label className='block text-sm font-medium mb-1'>Preview</label>
+        <div
+          className='w-full h-40 bg-gray-50 rounded overflow-hidden border'
+          aria-hidden
+        >
+          <img
+            src={previewSrc}
+            alt={values.title || 'Recipe image preview'}
+            className='w-full h-full object-cover'
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = placeholderForTitle(
+                values.title,
+              );
+            }}
+          />
+        </div>
       </div>
 
       <div>

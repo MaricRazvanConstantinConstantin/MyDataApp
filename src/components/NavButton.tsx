@@ -167,8 +167,12 @@ export default function NavButton({className = ''}: {className?: string}) {
                   strokeLinejoin='round'
                   className='w-5 h-5'
                 >
-                  <path d='M4 19.5A2.5 2.5 0 0 1 6.5 17H20' />
-                  <path d='M4 4.5A2.5 2.5 0 0 1 6.5 7H20v12' />
+                  <circle cx='4.5' cy='6.5' r='0.9' />
+                  <path d='M7 6.5h12' />
+                  <circle cx='4.5' cy='12' r='0.9' />
+                  <path d='M7 12h12' />
+                  <circle cx='4.5' cy='17.5' r='0.9' />
+                  <path d='M7 17.5h12' />
                 </svg>
               </span>
               <span>Recipes</span>
@@ -193,8 +197,8 @@ export default function NavButton({className = ''}: {className?: string}) {
                   strokeLinejoin='round'
                   className='w-5 h-5'
                 >
-                  <path d='M22 6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6' />
-                  <path d='M22 6l-10 7L2 6' />
+                  <rect x='2' y='4' width='20' height='16' rx='2' />
+                  <path d='M3 7l9 6 9-6' />
                 </svg>
               </span>
               <span>Contact</span>
@@ -202,7 +206,9 @@ export default function NavButton({className = ''}: {className?: string}) {
 
             <button
               role='menuitem'
-              className={`nav-link ${timersCount === 0 ? 'opacity-60' : ''}`}
+              className={`nav-link ${timersCount === 0 ? 'disabled' : ''}`}
+              aria-disabled={timersCount === 0}
+              disabled={timersCount === 0}
               onClick={() => {
                 if (timersCount === 0) {
                   closeMenu();
@@ -223,8 +229,9 @@ export default function NavButton({className = ''}: {className?: string}) {
                   strokeLinejoin='round'
                   className='w-5 h-5'
                 >
-                  <path d='M21 10v2a9 9 0 1 1-2-5.8' />
-                  <path d='M12 6V2' />
+                  <circle cx='12' cy='12' r='8' />
+                  <path d='M12 8v5' />
+                  <path d='M12 12l3 2' />
                 </svg>
               </span>
               <span>Timers{timersCount > 0 ? ` (${timersCount})` : ''}</span>

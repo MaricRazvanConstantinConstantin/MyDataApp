@@ -4,6 +4,7 @@ import {useAppDispatch, useAppSelector} from '../store/hooks';
 
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
+import placeholderForTitle from '../utils/placeholder';
 import type {Recipe} from '../utils/types/recipe';
 import {deleteRecipe} from '../store/recipesSlice';
 import {useToast} from '../context/hooks';
@@ -61,6 +62,28 @@ export default function RecipeDetail() {
     setJson(`recipe-checks-${id}`, storedChecks);
   }, [storedChecks, id]);
 
+  useEffect(() => {
+    function onChecksUpdated(e: Event) {
+      const rid = (e as CustomEvent)?.detail?.recipeId ?? id;
+      if (!rid || String(rid) !== String(id)) return;
+      setStoredChecks(() =>
+        getJson(`recipe-checks-${id ?? 'unknown'}`, {
+          ingredients: [],
+          steps: [],
+        }),
+      );
+    }
+    window.addEventListener(
+      'recipe-checks-updated',
+      onChecksUpdated as EventListener,
+    );
+    return () =>
+      window.removeEventListener(
+        'recipe-checks-updated',
+        onChecksUpdated as EventListener,
+      );
+  }, [id]);
+
   if (!recipe) {
     return (
       <div className='w-full flex items-center justify-center min-h-[60vh] py-8'>
@@ -114,13 +137,15 @@ export default function RecipeDetail() {
         aria-pressed={checked}
         aria-label={ariaLabel}
         onClick={onToggle}
-        className='mr-3 inline-flex items-center justify-center rounded-full'
+        className='mr-3 inline-flex items-center justify-center'
         style={{
           width: 22,
           height: 22,
           border: '1px solid var(--border)',
           background: checked ? 'var(--primary)' : 'transparent',
           color: checked ? 'var(--primary-foreground)' : 'var(--muted)',
+          borderRadius: '50%',
+          padding: 0,
         }}
       >
         {checked ? (
@@ -152,17 +177,63 @@ export default function RecipeDetail() {
           <div>
             <h2 className='text-2xl font-bold'>{recipe.title}</h2>
             <div className='text-sm text-muted'>
-              {recipe.category || '-'} • {recipe.servings ?? '-'} servings
+              {(() => {
+                const parts: string[] = [];
+                if (recipe.category) parts.push(recipe.category);
+                if (recipe.prep_time != null)
+                  parts.push(`${recipe.prep_time}m prep`);
+                if (recipe.cook_time != null)
+                  parts.push(`${recipe.cook_time}m cook`);
+                parts.push(`${recipe.servings ?? '-'} servings`);
+                return parts.join(' • ');
+              })()}
             </div>
           </div>
           <div className='space-x-2'>
-            <Button variant='ghost' onClick={() => navigate('/recipes')}>
-              Back
+            <Button
+              variant='ghost'
+              onClick={() => navigate('/recipes')}
+              aria-label='Back to recipes'
+              title='Back'
+            >
+              <svg
+                xmlns='http://www.w3.org/2000/svg'
+                viewBox='0 0 24 24'
+                width='18'
+                height='18'
+                fill='none'
+                stroke='currentColor'
+                strokeWidth='2'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+                aria-hidden
+              >
+                <path d='M19 12H6' />
+                <path d='M12 5l-7 7 7 7' />
+              </svg>
             </Button>
             {isAdmin && (
               <>
-                <Button onClick={() => navigate(`/recipes/${recipe.id}/edit`)}>
-                  Edit
+                <Button
+                  onClick={() => navigate(`/recipes/${recipe.id}/edit`)}
+                  aria-label='Edit recipe'
+                  title='Edit'
+                >
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 24 24'
+                    width='18'
+                    height='18'
+                    fill='none'
+                    stroke='currentColor'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    aria-hidden
+                  >
+                    <path d='M12 20h9' />
+                    <path d='M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z' />
+                  </svg>
                 </Button>
                 <Button
                   variant='ghost'
@@ -181,22 +252,39 @@ export default function RecipeDetail() {
                       console.error('Delete failed', err);
                     }
                   }}
+                  aria-label='Delete recipe'
+                  title='Delete'
                   style={{color: 'var(--accent)'}}
                 >
-                  Delete
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    viewBox='0 0 24 24'
+                    width='18'
+                    height='18'
+                    fill='none'
+                    stroke='currentColor'
+                    strokeWidth='2'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
+                    aria-hidden
+                  >
+                    <polyline points='3 6 5 6 21 6' />
+                    <path d='M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6' />
+                    <path d='M10 11v6' />
+                    <path d='M14 11v6' />
+                    <path d='M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2' />
+                  </svg>
                 </Button>
               </>
             )}
           </div>
         </div>
 
-        {recipe.image_url ? (
-          <img
-            src={recipe.image_url}
-            alt={recipe.title}
-            className='w-full h-56 object-cover rounded mb-4'
-          />
-        ) : null}
+        <img
+          src={recipe.image_url ?? placeholderForTitle(recipe.title)}
+          alt={recipe.title}
+          className='w-full h-56 object-cover rounded mb-4'
+        />
 
         <Card className='mb-4'>
           <div>

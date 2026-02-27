@@ -37,8 +37,6 @@ function Stars({value, size = 14}: {value: number; size?: number}) {
   );
 }
 
-// Numeric selector replaces the interactive star picker for simplicity and sizing stability.
-
 export default function ReviewsList({recipeId}: {recipeId: string}) {
   const dispatch = useAppDispatch();
   const state = useAppSelector((s) => s.reviews);
@@ -146,7 +144,7 @@ export default function ReviewsList({recipeId}: {recipeId: string}) {
           </div>
         </form>
 
-        <div className='space-y-3'>
+        <div className='space-y-3 reviews-list'>
           {loading ? (
             <div>Loading reviews…</div>
           ) : reviews.length === 0 ? (
@@ -155,7 +153,7 @@ export default function ReviewsList({recipeId}: {recipeId: string}) {
             </div>
           ) : (
             reviews.map((r) => (
-              <article key={r.id} className='p-3 rounded border'>
+              <article key={r.id} className='p-3 rounded'>
                 <div className='flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2'>
                   <div>
                     <div className='font-medium'>{r.author || 'Guest'}</div>

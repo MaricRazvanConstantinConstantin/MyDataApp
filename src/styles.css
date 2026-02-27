@@ -43,33 +43,33 @@ html {
 }
 
 [data-theme='one'] {
-  --primary: #b85b2b;
-  --secondary: #8e3e25;
-  --accent: #f6a04d;
-  --muted: #6b4b3a;
+  --primary: #ff6f3c;
+  --secondary: #d9480f;
+  --accent: #ffd166;
+  --muted: #8a5a3f;
   --surface: #fff6ef;
   --btn-foreground: #ffffff;
   --text: #2b2b2b;
-  --card-bg: #fffaf5;
-  --input-border: rgba(43, 25, 12, 0.06);
-  --chip-bg: rgba(184, 91, 43, 0.08);
-  --border: rgba(43, 25, 12, 0.06);
-  --background: linear-gradient(180deg, #fffaf5 0%, #fff3ea 100%);
+  --card-bg: #fff7f2;
+  --input-border: rgba(217, 115, 80, 0.12);
+  --chip-bg: rgba(255, 111, 60, 0.08);
+  --border: rgba(217, 115, 80, 0.12);
+  --background: linear-gradient(180deg, #fff7f2 0%, #fff1e6 100%);
 }
 
 [data-theme='two'] {
-  --primary: #3aa7a0;
-  --secondary: #85a36a;
-  --muted: #7b6b54;
-  --accent: #e3a85a;
-  --surface: #f7faf8;
+  --primary: #06b6d4;
+  --secondary: #7c3aed;
+  --muted: #5b6470;
+  --accent: #ff7ab6;
+  --surface: #f0f9ff;
   --btn-foreground: #0f172a;
   --text: #0f172a;
-  --card-bg: #ffffff;
-  --input-border: rgba(15, 23, 42, 0.06);
-  --chip-bg: rgba(31, 165, 138, 0.06);
-  --border: rgba(15, 23, 42, 0.06);
-  --background: linear-gradient(180deg, #ffffff 0%, #f7fbf8 100%);
+  --card-bg: #f7fdff;
+  --input-border: rgba(6, 182, 212, 0.08);
+  --chip-bg: rgba(6, 182, 212, 0.08);
+  --border: rgba(6, 182, 212, 0.08);
+  --background: linear-gradient(180deg, #f7feff 0%, #f0fbff 100%);
 }
 
 a {
@@ -276,13 +276,21 @@ button:focus-visible {
 }
 
 [role='list'].grid {
+  /* let generic lists size to content */
+  grid-auto-rows: auto;
+}
+
+/* For the recipes two-column grid, keep equal-height cards to maintain consistent layout */
+.recipes-grid {
   grid-auto-rows: 1fr;
+}
+.recipes-grid .card.list-item {
+  height: 100%;
 }
 
 .card.list-item {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 .site-header {
@@ -391,6 +399,17 @@ button:focus-visible {
   background: color-mix(in srgb, var(--primary) 8%, transparent);
   transform: translateX(2px);
 }
+.nav-link.disabled,
+.nav-link[aria-disabled='true'] {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: default;
+  transform: none !important;
+}
+.nav-link.disabled:hover,
+.nav-link[aria-disabled='true']:hover {
+  background: transparent;
+}
 .nav-icon {
   width: 28px;
   height: 28px;
@@ -451,7 +470,6 @@ button:focus-visible {
     display: none;
   }
 
-  /* Make the recipes search bar occupy its own row on small screens */
   .recipes-filters {
     flex-direction: column;
     align-items: stretch;
@@ -531,6 +549,23 @@ button:focus-visible {
   gap: 0.5rem;
   align-items: center;
   flex-direction: row;
+}
+
+/* Ensure ghost action buttons in list items don't show an unexpected border */
+.list-item .card-actions .btn-ghost {
+  border-color: transparent;
+  box-shadow: none;
+}
+.list-item .card-actions .btn-ghost:focus,
+.list-item .card-actions .btn-ghost:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
+}
+
+/* Reviews list: use theme border color instead of default black */
+.reviews-list article {
+  border: 1px solid var(--border);
 }
 
 form > .grid {
@@ -646,21 +681,119 @@ form > .grid {
   text-align: center;
   animation: modalPop 160ms cubic-bezier(0.2, 0.9, 0.3, 1);
 }
+.timer-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+}
+.timer-modal-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--primary);
+  flex-shrink: 0;
+}
 .timer-modal h2 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.25rem;
+  margin: 0 0 0.125rem 0;
+  font-size: 1.15rem;
   color: var(--primary);
 }
-.timer-modal p {
+.timer-modal-label {
   margin: 0;
   color: var(--muted);
-  font-size: 0.98rem;
+  font-size: 0.95rem;
+  display: block;
+}
+.timer-modal-close {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 6px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.timer-modal-close:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 .timer-modal-actions {
   display: flex;
   gap: 0.75rem;
   margin-top: 1.25rem;
   justify-content: center;
+}
+.timer-modal-actions .btn-primary {
+  min-width: 120px;
+}
+.timer-modal-actions .pager-btn {
+  min-width: 100px;
+}
+
+/* TimersPanel styles */
+.timers-panel {
+  border-radius: 12px;
+  padding: 1rem;
+}
+.timers-panel-badge {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  color: var(--primary);
+}
+.timers-item {
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--card-bg) 96%, transparent);
+}
+.timers-item-progress {
+  height: 8px;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.timers-item-fill {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--primary) 82%, #000 0%),
+    var(--primary)
+  );
+  transition: width 1000ms linear;
+}
+.timers-panel .btn-sm {
+  padding: 0.35rem 0.5rem;
+}
+.timers-panel .pager-btn {
+  padding: 0.35rem 0.5rem;
+}
+
+/* Add-timer icon button: transparent background and theme-colored icon */
+.add-timer-btn {
+  background: transparent;
+  border: none;
+  padding: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+.add-timer-btn:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+.add-timer-btn:focus {
+  outline: 2px solid color-mix(in srgb, var(--primary) 24%, transparent);
+  border-radius: 6px;
 }
 
 @keyframes modalFadeIn {
@@ -701,7 +834,7 @@ form > .grid {
   left: 50%;
   right: auto;
   transform: translateX(-50%);
-  width: min(960px, calc(100% - 2rem));
+  width: min(200px, calc(100% - 2rem));
   border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.06);
   padding: 0.6rem 0.9rem;
@@ -713,6 +846,14 @@ form > .grid {
 .recipes-footer div[role='status'],
 .recipes-footer .text-muted {
   color: var(--muted);
+}
+
+/* Ensure footer inner contents are centered */
+.recipes-footer .max-w-4xl {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
 }
 
 @media (max-width: 640px) {
@@ -761,7 +902,8 @@ form > .grid {
     color-mix(in srgb, var(--primary) 82%, #000 0%),
     var(--primary)
   );
-  transition: width 300ms linear;
+  transition: width 1000ms linear;
+  will-change: width;
 }
 .step-timer-time {
   font-family: monospace;

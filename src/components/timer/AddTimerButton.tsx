@@ -43,7 +43,7 @@ export default function AddTimerButton({
     <div className='inline-block ml-3'>
       <button
         type='button'
-        className='pager-btn'
+        className='add-timer-btn'
         aria-label='Add timer for step'
         onClick={() => setOpen((o) => !o)}
       >
@@ -52,14 +52,14 @@ export default function AddTimerButton({
           viewBox='0 0 24 24'
           fill='none'
           stroke='currentColor'
-          strokeWidth='2'
+          strokeWidth='1.8'
           strokeLinecap='round'
           strokeLinejoin='round'
-          className='w-4 h-4'
-          aria-hidden
+          className='w-5 h-5'
         >
-          <path d='M21 10v2a9 9 0 1 1-2-5.8'></path>
-          <path d='M12 6V2'></path>
+          <circle cx='12' cy='12' r='8' />
+          <path d='M12 8v5' />
+          <path d='M12 12l3 2' />
         </svg>
       </button>
 

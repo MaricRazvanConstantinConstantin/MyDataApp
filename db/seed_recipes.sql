@@ -1,6 +1,3 @@
--- Sample seed data for recipes table
--- Insert a few recipes. Adjust timestamps or IDs if needed.
-
 insert into public.recipes (title, description, ingredients, steps, category, prep_time, cook_time, servings, tags, image_url)
 values
 (

@@ -18,6 +18,7 @@ import {
   type FormikErrors,
 } from 'formik';
 import {useToast} from '../../context/hooks';
+import {isValidImageUrl} from '../../utils/guards/image';
 
 type Props = {
   initial?: Partial<Recipe> | null;
@@ -29,6 +30,7 @@ type FormValues = {
   title: string;
   description: string;
   category: string;
+  image_url: string;
   prep_time: string;
   cook_time: string;
   servings: string;
@@ -45,6 +47,7 @@ export default function RecipeForm({initial = null, onCancel, onSaved}: Props) {
   const initialValues: FormValues = {
     title: initial?.title ?? '',
     description: initial?.description ?? '',
+    image_url: initial?.image_url ?? '',
     category: initial?.category ?? '',
     prep_time: initial?.prep_time != null ? String(initial.prep_time) : '',
     cook_time: initial?.cook_time != null ? String(initial.cook_time) : '',
@@ -72,6 +75,14 @@ export default function RecipeForm({initial = null, onCancel, onSaved}: Props) {
 
     if (!values.tags || values.tags.length === 0)
       errors.tags = 'Add at least one tag';
+
+    // validate optional image URL: require http(s) and common image extension
+    if (values.image_url && String(values.image_url).trim()) {
+      if (!isValidImageUrl(String(values.image_url).trim())) {
+        errors.image_url =
+          'Image URL must be a valid http(s) image URL (jpg/png/webp/gif/avif/svg)';
+      }
+    }
 
     const numFields: Array<
       keyof Pick<FormValues, 'prep_time' | 'cook_time' | 'servings'>
@@ -128,6 +139,10 @@ export default function RecipeForm({initial = null, onCancel, onSaved}: Props) {
     const payload: Partial<Recipe> = {
       title: values.title.trim(),
       description: values.description.trim() || null,
+      image_url:
+        values.image_url && values.image_url.trim()
+          ? values.image_url.trim()
+          : null,
       category: values.category.trim() || null,
       prep_time: values.prep_time ? Number(values.prep_time) : null,
       cook_time: values.cook_time ? Number(values.cook_time) : null,
@@ -228,6 +243,7 @@ export default function RecipeForm({initial = null, onCancel, onSaved}: Props) {
                   <RecipeMeta
                     values={{
                       title: values.title,
+                      image_url: values.image_url,
                       category: values.category,
                       description: values.description,
                       prep_time: values.prep_time,

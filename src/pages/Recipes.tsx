@@ -238,14 +238,14 @@ export default function RecipesPage() {
 
     return (
       <div
-        className={`fixed bottom-0 left-0 right-0 bg-white/95 border-t p-3 z-40 transition-transform  duration-400 ease-in-out transform recipes-footer ${
+        className={`fixed bottom-0 left-0 right-0 bg-white/95 p-3 z-40 transition-transform  duration-400 ease-in-out transform recipes-footer ${
           visible
             ? 'translate-y-0 opacity-100'
             : 'translate-y-full opacity-0 pointer-events-none'
         }`}
         aria-hidden={!visible}
       >
-        <div className='max-w-4xl mx-auto flex items-center justify-center space-x-4'>
+        <div className='max-w-xl mx-auto flex items-center justify-center space-x-4'>
           <button disabled={page <= 1} onClick={onPrev} className='pager-btn'>
             {'<'}
           </button>
@@ -269,7 +269,7 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className='gap-1 flex flex-col items-center overflow-y-hidden pb-28'>
+    <div className='gap-1 flex flex-col items-center overflow-y-hidden'>
       <header className='flex items-center w-full mb-4 gap-4 flex-wrap recipes-filters recipes-header-card'>
         <div className='flex-1 min-w-0 search-field'>
           <Input
@@ -338,7 +338,7 @@ export default function RecipesPage() {
         <div>
           <div
             role='list'
-            className='grid gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2'
+            className='recipes-grid grid gap-3 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2'
           >
             {pageItems.map((r) => (
               <div role='listitem' key={r.id} className='h-full'>
@@ -347,7 +347,13 @@ export default function RecipesPage() {
                   isAdmin={isAdmin}
                   onOpen={handleOpen}
                   onEdit={handleEdit}
-                  onDelete={handleDelete}
+                  onDelete={() => {
+                    const ok = window.confirm(`Delete "${r.title}"?`);
+                    if (ok) {
+                      console.log('Deleting recipe', r.id);
+                      handleDelete(r.id);
+                    }
+                  }}
                 />
               </div>
             ))}

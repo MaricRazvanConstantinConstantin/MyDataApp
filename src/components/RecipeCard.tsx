@@ -1,6 +1,7 @@
 import {memo, useEffect, useMemo} from 'react';
 import Card from './ui/Card';
 import Button from './ui/Button';
+import placeholderForTitle from '../utils/placeholder';
 import type {Recipe} from '../utils/types/recipe';
 import {useAppDispatch, useAppSelector} from '../store/hooks';
 import {fetchReviews} from '../store/reviewsSlice';
@@ -46,15 +47,13 @@ function RecipeCard({recipe, isAdmin, onEdit, onDelete, onOpen}: Props) {
       aria-labelledby={`recipe-title-${recipe.id}`}
       onClick={() => onOpen?.(recipe)}
     >
-      <div className=' space-x-4'>
+      <div className='space-x-4'>
         <div className='flex flex-row gap-2'>
-          {recipe.image_url ? (
-            <img
-              src={recipe.image_url}
-              alt={recipe.title}
-              className='w-28 h-20 object-cover rounded'
-            />
-          ) : null}
+          <img
+            src={recipe.image_url ?? placeholderForTitle(recipe.title)}
+            alt={recipe.title}
+            className='w-28 h-20 object-cover rounded'
+          />
           <div className='min-w-0'>
             <h3
               id={`recipe-title-${recipe.id}`}
@@ -62,7 +61,7 @@ function RecipeCard({recipe, isAdmin, onEdit, onDelete, onOpen}: Props) {
             >
               {recipe.title}
             </h3>
-            <div className='text-sm text-muted flex items-center gap-3'>
+            <div className='text-sm text-muted flex gap-3'>
               <div>
                 {recipe.category || '-'} • {recipe.servings ?? '-'} servings •{' '}
                 {total > 0 ? (

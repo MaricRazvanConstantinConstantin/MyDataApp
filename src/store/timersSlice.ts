@@ -148,6 +148,12 @@ const slice = createSlice({
       const t = state.items.find((x) => x.id === action.payload.id);
       if (!t) return;
       t.remaining = Math.max(0, Math.floor(action.payload.remaining));
+      // If remaining has been increased (e.g., snooze) and exceeds the
+      // original duration, expand duration so progress calculations still work
+      // and the bar fills across the new interval.
+      if (t.remaining > t.duration) {
+        t.duration = t.remaining;
+      }
       if (t.running) {
         t.endsAt = new Date(Date.now() + t.remaining * 1000).toISOString();
       }
